@@ -13,6 +13,25 @@ const compat = new FlatCompat({
   allConfig: js.configs.all,
 });
 
+// eslint-config-google 0.14 predates ESLint 10. Keep its supported rules and
+// omit only core rules that ESLint 10 no longer provides (for example,
+// valid-jsdoc).
+const googleConfigs = compat.extends("google").map((config) => {
+  if (!config.rules) {
+    return config;
+  }
+
+  return {
+    ...config,
+    rules: Object.fromEntries(
+      Object.entries(config.rules).filter(([ruleName]) =>
+        ruleName.includes("/") ||
+        Object.hasOwn(js.configs.all.rules, ruleName),
+      ),
+    ),
+  };
+});
+
 export default defineConfig([
   globalIgnores([
     "lib/**",
@@ -22,7 +41,7 @@ export default defineConfig([
     files: ["**/*.{js,cjs,mjs,jsx,ts,cts,mts,tsx}"],
     extends: [
       js.configs.recommended,
-      ...compat.extends("google"),
+      ...googleConfigs,
       importX.flatConfigs.recommended,
       importX.flatConfigs.typescript,
     ],
