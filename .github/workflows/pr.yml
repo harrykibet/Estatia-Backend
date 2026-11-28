@@ -2,7 +2,7 @@ name: Backend PR Verification
 
 on:
   pull_request:
-    branches: [master, chore/backend-foundation-governance]
+    branches: [master]
     types: [opened, synchronize, reopened, ready_for_review]
   merge_group:
     branches: [master]
@@ -47,13 +47,13 @@ jobs:
       - name: Build and run unit tests
         run: npm --prefix functions test
 
-      - name: Run Functions Emulator integration test
+      - name: Run Functions, Auth, and Firestore Emulator integration tests
         shell: bash
         run: |
           set -euo pipefail
           npx --yes firebase-tools@15.37.0 emulators:exec \
             --project demo-estatia-ci \
-            --only functions \
+            --only functions,auth,firestore \
             --non-interactive \
             "npm --prefix functions run test:emulator"
 
