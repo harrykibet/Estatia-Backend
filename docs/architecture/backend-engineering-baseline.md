@@ -73,6 +73,8 @@ Do not introduce an abstraction that only forwards calls without enforcing a rea
 - Keep private credentials on trusted server infrastructure.
 - Validate all untrusted request data at runtime.
 - Use least-privilege service identities and narrowly scoped secret bindings.
+- The legacy client-callable `getSecret` export must fail closed and must never access Secret Manager; it is retained temporarily only to avoid deleting a possibly deployed function before inventory and consumer review.
+- Client-required public configuration (for example Firebase SDK configuration or payment publishable keys) is not a Secret Manager secret and must be explicitly classified, restricted at its provider, and distributed through build-time configuration or a separate narrow public-config contract.
 - Do not enable or deploy Firestore/Storage policy until the actual client access model is inventoried and emulator tests cover both allowed and denied cases.
 - Keep production deployment credentials out of pull-request workflows.
 
@@ -85,7 +87,7 @@ Do not introduce an abstraction that only forwards calls without enforcing a rea
 | 2 | Integration | Functions Emulator, Firestore/Storage rules emulator, provider mocks, API contracts |
 | 3 | Release confidence | Production build, staging smoke tests, migration/rollback review, security and operational checks |
 
-The current foundation implements lint, type checking, unit tests, build verification, and a Functions Emulator callable smoke test. Firestore/Storage rules verification is intentionally deferred until issue #2 is resolved.
+The current foundation implements lint, type checking, unit tests, build verification, and Functions Emulator callable tests. Firestore/Storage rules verification is intentionally deferred until issue #2 is resolved.
 
 ## Explicit production blockers found in the initial audit
 

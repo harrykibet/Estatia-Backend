@@ -21,9 +21,7 @@ Please allow the maintainers to assess and coordinate remediation before public 
 
 ## Current known security work
 
-The following open issues track security-sensitive work discovered during the initial repository audit:
-
-- [#1 — Client-accessible Secret Manager retrieval and secret API contract](https://github.com/harrykibet/Estatia-Backend/issues/1).
+- [#1 — Client-accessible Secret Manager retrieval and secret API contract](https://github.com/harrykibet/Estatia-Backend/issues/1): the backend callable now fails closed for unauthenticated and authenticated clients. Deployed-function inventory, potential exposure assessment/rotation, and Android legacy-client cleanup remain outstanding.
 - [#2 — Firestore and Storage authorization rules](https://github.com/harrykibet/Estatia-Backend/issues/2).
 
-The existence of these issues means the affected paths require review; it does not mean the risks have been remediated.
+The existence of these issues means the affected paths require review; it does not mean all related risks have been fully remediated.
