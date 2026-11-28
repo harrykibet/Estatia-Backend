@@ -131,6 +131,11 @@ export function buildProfileMutation(
   return {publicProfile, privateProfile};
 }
 
+/**
+ * Validates and normalizes a user-selected display name.
+ * @param {unknown} value Untrusted display name.
+ * @return {string} Trimmed display name.
+ */
 function normalizeDisplayName(value: unknown): string {
   if (typeof value !== "string") {
     throw new ProfileValidationError("displayName must be a string.");
@@ -146,6 +151,11 @@ function normalizeDisplayName(value: unknown): string {
   return normalized;
 }
 
+/**
+ * Validates a public profile picture URL, allowing null to clear the value.
+ * @param {unknown} value Untrusted profile-picture URL.
+ * @return {string | null} Validated HTTPS URL or null.
+ */
 function normalizeProfilePictureUrl(value: unknown): string | null {
   if (value === null) {
     return null;
@@ -182,6 +192,11 @@ function normalizeProfilePictureUrl(value: unknown): string | null {
   return normalized;
 }
 
+/**
+ * Validates a user-editable public bio.
+ * @param {unknown} value Untrusted biography.
+ * @return {string | null} Trimmed biography or null.
+ */
 function normalizeBio(value: unknown): string | null {
   if (value === null) {
     return null;
@@ -196,7 +211,16 @@ function normalizeBio(value: unknown): string | null {
   return value.trim();
 }
 
-function safeClaimString(value: unknown, maxLength: number): string | undefined {
+/**
+ * Safely extracts a bounded string from a verified Auth token claim.
+ * @param {unknown} value Token claim value.
+ * @param {number} maxLength Maximum permitted length.
+ * @return {string | undefined} Normalized claim string when valid.
+ */
+function safeClaimString(
+  value: unknown,
+  maxLength: number
+): string | undefined {
   if (typeof value !== "string") {
     return undefined;
   }
@@ -207,6 +231,11 @@ function safeClaimString(value: unknown, maxLength: number): string | undefined 
   return normalized;
 }
 
+/**
+ * Accepts only a safe HTTPS picture URL from Auth token claims.
+ * @param {unknown} value Token picture claim.
+ * @return {string | undefined} HTTPS picture URL when valid.
+ */
 function safeClaimUrl(value: unknown): string | undefined {
   if (typeof value !== "string") {
     return undefined;

@@ -74,7 +74,9 @@ export const syncUserProfile = onCall(
 
     const database = getFirestore();
     const privateUserRef = database.collection("users").doc(auth.uid);
-    const publicProfileRef = database.collection("publicProfiles").doc(auth.uid);
+    const publicProfileRef = database
+      .collection("publicProfiles")
+      .doc(auth.uid);
 
     await database.runTransaction(async (transaction) => {
       const [privateUserSnapshot, publicProfileSnapshot] = await Promise.all([
