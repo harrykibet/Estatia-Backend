@@ -3,7 +3,7 @@ import js from "@eslint/js";
 import { defineConfig, globalIgnores } from "eslint/config";
 import { importX } from "eslint-plugin-import-x";
 import globals from "globals";
-import tseslint from "typescript-eslint";
+import { configs as tseslintConfigs } from "typescript-eslint";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -38,7 +38,7 @@ export default defineConfig([
     "generated/**",
   ]),
   {
-    files: ["**/*.{js,cjs,mjs,jsx,ts,cts,mts,tsx}"],
+    files: ["**/*.{js,ts}"],
     extends: [
       js.configs.recommended,
       ...googleConfigs,
@@ -55,9 +55,9 @@ export default defineConfig([
     },
   },
   {
-    files: ["**/*.{ts,cts,mts,tsx}"],
+    files: ["**/*.ts"],
     extends: [
-      tseslint.configs.recommended,
+      tseslintConfigs.recommended,
     ],
     rules: {
       "import-x/named": "off",
