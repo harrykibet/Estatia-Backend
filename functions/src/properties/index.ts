@@ -257,7 +257,7 @@ export const setPropertyLike = onCall(
 
         if (userSnapshot.exists) {
           transaction.set(userRef, {
-            likedProperties: FieldValue.arrayUnion([input.propertyId]),
+            likedProperties: FieldValue.arrayUnion(input.propertyId),
           }, {merge: true});
         }
       } else {
@@ -272,7 +272,7 @@ export const setPropertyLike = onCall(
 
         if (userSnapshot.exists) {
           transaction.set(userRef, {
-            likedProperties: FieldValue.arrayRemove([input.propertyId]),
+            likedProperties: FieldValue.arrayRemove(input.propertyId),
           }, {merge: true});
         }
       }
