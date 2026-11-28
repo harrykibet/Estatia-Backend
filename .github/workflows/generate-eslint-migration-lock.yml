@@ -6,7 +6,7 @@ on:
       - tooling/migrate-eslint10-typescript6
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   refresh:
@@ -61,6 +61,19 @@ jobs:
             --only functions,auth,firestore \
             --non-interactive \
             "npm --prefix functions run test:emulator"
+
+      - name: Commit regenerated lockfile
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add functions/package-lock.json
+          if git diff --cached --quiet; then
+            echo "Generated lockfile is unchanged; nothing to commit."
+          else
+            git commit -m "chore(tooling): regenerate Functions lockfile for ESLint 10 and TypeScript 6"
+            git push origin HEAD:tooling/migrate-eslint10-typescript6
+          fi
 
       - name: Retain generated package-lock.json
         if: always()
