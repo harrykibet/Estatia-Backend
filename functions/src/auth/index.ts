@@ -109,6 +109,9 @@ export const syncUserProfile = onCall(
       // display edit. On first migration, use legacy display fields only; never
       // copy private or privileged fields from the mixed legacy user document.
       const hasDisplayName = Object.prototype.hasOwnProperty.call(
+        requestProfile,
+        "displayName"
+      );
       if (!hasDisplayName) {
         const existingName = existingPublicProfile.displayName;
         const legacyName = legacyUser.name;
@@ -119,8 +122,10 @@ export const syncUserProfile = onCall(
         }
       }
       const hasProfilePicture = Object.prototype.hasOwnProperty.call(
+        requestProfile,
+        "profilePictureUrl"
+      );
       if (!hasProfilePicture) {
-      if (!Object.prototype.hasOwnProperty.call(requestProfile, "profilePictureUrl")) {
         const existingPicture = existingPublicProfile.profilePictureUrl;
         const legacyPicture = legacyUser.profilePictureUrl;
         if (typeof existingPicture === "string") {
