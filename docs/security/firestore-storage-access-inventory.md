@@ -27,6 +27,9 @@ The `ownedproperties` subcollection name is also declared in Android constants, 
 
 ### Field-level concerns
 
+Firestore Security Rules authorize a document read as a whole; they do not redact selected fields from the returned document. Because the current user model combines public-looking profile attributes with email and phone fields, use separate private `users/{uid}` and allowlisted `publicProfiles/{uid}` documents if other users need to see a profile. Do not expose the existing mixed user document merely to render an owner's name or avatar.
+
+
 1. Android's `UserType` includes `TENANT`, `AGENT`, and `PROPERTY_OWNER`; `VerificationLevel` includes `NONE`, `IDENTITY_VERIFIED`, and `TRUSTED_PARTNER`. The Android user-profile write serializes a `UserEntityModel` containing both `userType` and `verificationLevel`. These values are supplied by client-side models; they are not proof of role or verification. Rules must not treat a client-writable field as an administrative claim.
 2. Android's property model includes `ownerId`, `viewsCount`, `sharesCount`, `likesCount`, `commentsCount`, and a transient `matchScore`. The current adapter increments views and shares by directly updating the parent property document, without recording a per-user event or deduplication key. Direct counter writes would permit manipulation if broadly allowed.
 3. Android's `PropertyEntityModel` contains a `contact` property, while the upload path separately writes the supplied contact object to `contact/info`. The parent property is serialized as a whole in the same operation. Confirm with a focused serialization test that contact data cannot also be written into the public parent document; otherwise remove it from the public serialization shape.
