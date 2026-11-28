@@ -159,7 +159,11 @@ export const syncUserProfile = onCall(
       // This is a user-declared display category, not an authorization role.
       // Only the three documented public values may be migrated from legacy
       // data; values such as ADMIN are never published or used for access.
-      if (!Object.prototype.hasOwnProperty.call(requestProfile, "profileType")) {
+      const hasProfileType = Object.prototype.hasOwnProperty.call(
+        requestProfile,
+        "profileType"
+      );
+      if (!hasProfileType) {
         const existingType = existingPublicProfile.profileType;
         const legacyType = legacyUser.userType;
         if (
