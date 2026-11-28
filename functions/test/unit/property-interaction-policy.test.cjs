@@ -86,7 +86,9 @@ describe("property comment request contract", () => {
     );
   });
 
-  it("rejects client-supplied author identity, display name and timestamp", () => {
+  it(
+    "rejects client-supplied author identity, display name and timestamp",
+    () => {
     assert.throws(
       () => parsePropertyCommentRequest({
         propertyId: "property-1",
@@ -96,9 +98,10 @@ describe("property comment request contract", () => {
         authorName: "Trusted Person",
         timeStamp: 1,
       }),
-      PropertyInteractionValidationError
-    );
-  });
+        PropertyInteractionValidationError
+      );
+    }
+  );
 
   it("rejects empty and oversized comment messages", () => {
     for (const message of ["", "   ", "x".repeat(2001), null]) {

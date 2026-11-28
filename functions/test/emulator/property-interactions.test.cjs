@@ -16,7 +16,9 @@ async function createSyntheticUser() {
   const email = `property-interactions-${randomUUID()}@example.test`;
   const password = `CiOnly-${randomUUID()}-Aa9!`;
   const response = await fetch(
-    `http://${authEmulatorHost}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=${authApiKey}`,
+    "http://" + authEmulatorHost +
+      "/identitytoolkit.googleapis.com/v1/accounts:signUp" +
+      "?key=" + authApiKey,
     {
       method: "POST",
       signal: AbortSignal.timeout(30_000),
@@ -52,7 +54,9 @@ async function callFunction(name, data, idToken) {
 
 async function deleteSyntheticUser(idToken) {
   await fetch(
-    `http://${authEmulatorHost}/identitytoolkit.googleapis.com/v1/accounts:delete?key=${authApiKey}`,
+    "http://" + authEmulatorHost +
+      "/identitytoolkit.googleapis.com/v1/accounts:delete" +
+      "?key=" + authApiKey,
     {
       method: "POST",
       signal: AbortSignal.timeout(30_000),
@@ -91,7 +95,12 @@ test("recordPropertyEngagement is authenticated and idempotent", async () => {
 
     const forgedUid = await callFunction(
       "recordPropertyEngagement",
-      {propertyId, eventId: randomUUID(), eventType: "view", uid: other.localId},
+      {
+        propertyId,
+        eventId: randomUUID(),
+        eventType: "view",
+        uid: other.localId,
+      },
       user.idToken
     );
     assert.equal(forgedUid.response.status, 400);
@@ -160,7 +169,9 @@ test("recordPropertyEngagement is authenticated and idempotent", async () => {
   }
 });
 
-test("submitPropertyComment derives author details and increments count once", async () => {
+test(
+  "submitPropertyComment derives author details and increments count once",
+  async () => {
   const unauthenticated = await callFunction(
     "submitPropertyComment",
     {
@@ -235,7 +246,11 @@ test("submitPropertyComment derives author details and increments count once", a
     assert.equal(typeof comment.data().timeStamp, "number");
     assert.equal(property.data().commentsCount, 1);
   } finally {
-    await Promise.all([propertyRef.delete(), profileRef.delete(), commentRef.delete()]);
+    await Promise.all([
+      propertyRef.delete(),
+      profileRef.delete(),
+      commentRef.delete(),
+    ]);
     try {
       await Promise.all([
         deleteSyntheticUser(user.idToken),
