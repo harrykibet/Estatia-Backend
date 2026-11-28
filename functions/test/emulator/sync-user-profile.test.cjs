@@ -161,3 +161,95 @@ test("syncUserProfile authenticates and separates public/private profile documen
     }
   }
 });
+
+
+test("syncUserProfile migrates only legacy display fields to publicProfiles", async () => {
+  const email = `legacy-profile-${randomUUID()}@example.test`;
+  const password = `CiOnly-${randomUUID()}-Aa9!`;
+  const signUpResponse = await fetch(
+    `http://${authEmulatorHost}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=${authApiKey}`,
+    {
+      method: "POST",
+      signal: AbortSignal.timeout(30_000),
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        email,
+        password,
+        returnSecureToken: true,
+      }),
+    }
+  );
+  const signUpBody = await signUpResponse.json();
+  assert.equal(
+    signUpResponse.status,
+    200,
+    `Auth Emulator sign-up failed: ${JSON.stringify(signUpBody)}`
+  );
+
+  const adminApp = initializeApp(
+    {projectId},
+    `legacy-profile-contract-${randomUUID()}`
+  );
+  const database = getFirestore(adminApp);
+  const userRef = database.collection("users").doc(signUpBody.localId);
+  const publicProfileRef = database.collection("publicProfiles").doc(signUpBody.localId);
+
+  try {
+    await userRef.set({
+      uid: signUpBody.localId,
+      name: "Legacy Display Name",
+      profilePictureUrl: "https://cdn.example.test/legacy-avatar.png",
+      bio: "Legacy public biography",
+      email,
+      phoneNumber: "+254700000001",
+      userType: "PROPERTY_OWNER",
+      verificationLevel: "NONE",
+      followerCount: 12,
+    });
+
+    const migrated = await callSyncUserProfile({}, signUpBody.idToken);
+    assert.equal(
+      migrated.response.status,
+      200,
+      `Legacy profile sync failed: ${JSON.stringify(migrated.body)}`
+    );
+
+    const [privateSnapshot, publicSnapshot] = await Promise.all([
+      userRef.get(),
+      publicProfileRef.get(),
+    ]);
+    const privateProfile = privateSnapshot.data();
+    const publicProfile = publicSnapshot.data();
+
+    assert.equal(publicProfile.displayName, "Legacy Display Name");
+    assert.equal(
+      publicProfile.profilePictureUrl,
+      "https://cdn.example.test/legacy-avatar.png"
+    );
+    assert.equal(publicProfile.bio, "Legacy public biography");
+    assert.equal("email" in publicProfile, false);
+    assert.equal("phoneNumber" in publicProfile, false);
+    assert.equal("userType" in publicProfile, false);
+    assert.equal("verificationLevel" in publicProfile, false);
+    assert.equal("followerCount" in publicProfile, false);
+
+    assert.equal(privateProfile.email, email);
+    assert.equal(privateProfile.phoneNumber, "+254700000001");
+    assert.equal(privateProfile.userType, "PROPERTY_OWNER");
+    assert.equal(privateProfile.followerCount, 12);
+  } finally {
+    await Promise.all([userRef.delete(), publicProfileRef.delete()]);
+    try {
+      await fetch(
+        `http://${authEmulatorHost}/identitytoolkit.googleapis.com/v1/accounts:delete?key=${authApiKey}`,
+        {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({idToken: signUpBody.idToken}),
+        }
+      );
+    } finally {
+      await deleteApp(adminApp);
+    }
+  }
+});

@@ -97,13 +97,53 @@ export const syncUserProfile = onCall(
         } : {}),
       };
 
-      const publicProfileWrite = {
+      const legacyUser = privateUserSnapshot.data() ?? {};
+      const existingPublicProfile = publicProfileSnapshot.data() ?? {};
+      const requestProfile = request.data as Record<string, unknown>;
+
+      const publicProfileWrite: Record<string, unknown> = {
         ...mutation.publicProfile,
+      };
+
+      // Preserve an existing public choice when a sign-in bootstrap sends no
+      // display edit. On first migration, use legacy display fields only; never
+      // copy private or privileged fields from the mixed legacy user document.
+      if (!Object.prototype.hasOwnProperty.call(requestProfile, "displayName")) {
+        const existingName = existingPublicProfile.displayName;
+        const legacyName = legacyUser.name;
+        if (typeof existingName === "string") {
+          publicProfileWrite.displayName = existingName;
+        } else if (typeof legacyName === "string") {
+          publicProfileWrite.displayName = legacyName;
+        }
+      }
+
+      if (!Object.prototype.hasOwnProperty.call(requestProfile, "profilePictureUrl")) {
+        const existingPicture = existingPublicProfile.profilePictureUrl;
+        const legacyPicture = legacyUser.profilePictureUrl;
+        if (typeof existingPicture === "string") {
+          publicProfileWrite.profilePictureUrl = existingPicture;
+        } else if (typeof legacyPicture === "string") {
+          publicProfileWrite.profilePictureUrl = legacyPicture;
+        }
+      }
+
+      if (!Object.prototype.hasOwnProperty.call(requestProfile, "bio")) {
+        const existingBio = existingPublicProfile.bio;
+        const legacyBio = legacyUser.bio;
+        if (typeof existingBio === "string") {
+          publicProfileWrite.bio = existingBio;
+        } else if (typeof legacyBio === "string") {
+          publicProfileWrite.bio = legacyBio;
+        }
+      }
+
+      Object.assign(publicProfileWrite, {
         updatedAt: FieldValue.serverTimestamp(),
         ...(!publicProfileSnapshot.exists ? {
           createdAt: FieldValue.serverTimestamp(),
         } : {}),
-      };
+      });
 
       transaction.set(privateUserRef, privateUserWrite, {merge: true});
       transaction.set(publicProfileRef, publicProfileWrite, {merge: true});
