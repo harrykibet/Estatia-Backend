@@ -10,7 +10,7 @@ export class MpesaClient {
    * Creates a new MpesaClient.
    */
   constructor() {
-    // eslint-disable-next-line import/no-named-as-default-member
+    // eslint-disable-next-line import-x/no-named-as-default-member
     this.http = axios.create({
       baseURL: "https://sandbox.safaricom.co.ke",
       timeout: 10000,
@@ -24,7 +24,7 @@ export class MpesaClient {
    * @return {Promise<unknown>} Response body from the STK push call.
    */
   async initiateStkPush(accessToken: string, payload: unknown) {
-    // eslint-disable-next-line import/no-named-as-default-member
+    // eslint-disable-next-line import-x/no-named-as-default-member
     const response = await this.http.post(
       "/mpesa/stkpush/v1/processrequest",
       payload,
