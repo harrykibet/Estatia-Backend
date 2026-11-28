@@ -89,15 +89,15 @@ describe("property comment request contract", () => {
   it(
     "rejects client-supplied author identity, display name and timestamp",
     () => {
-    assert.throws(
-      () => parsePropertyCommentRequest({
-        propertyId: "property-1",
-        commentId: "550e8400-e29b-41d4-a716-446655440001",
-        message: "Hello",
-        authorId: "another-user",
-        authorName: "Trusted Person",
-        timeStamp: 1,
-      }),
+      assert.throws(
+        () => parsePropertyCommentRequest({
+          propertyId: "property-1",
+          commentId: "550e8400-e29b-41d4-a716-446655440001",
+          message: "Hello",
+          authorId: "another-user",
+          authorName: "Trusted Person",
+          timeStamp: 1,
+        }),
         PropertyInteractionValidationError
       );
     }

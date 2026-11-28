@@ -37,7 +37,7 @@ export const recordPropertyEngagement = onCall(
       );
     }
 
-    let input;
+    let input: ReturnType<typeof parsePropertyEngagementRequest>;
     try {
       input = parsePropertyEngagementRequest(request.data);
     } catch (error) {
@@ -127,7 +127,7 @@ export const submitPropertyComment = onCall(
       );
     }
 
-    let input;
+    let input: ReturnType<typeof parsePropertyCommentRequest>;
     try {
       input = parsePropertyCommentRequest(request.data);
     } catch (error) {
