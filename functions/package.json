@@ -6,9 +6,9 @@
     "clean": "rimraf lib",
     "build": "npm run clean && tsc",
     "build:watch": "tsc --watch",
-    "test:unit": "node --test test/unit/container.test.cjs test/unit/errors.test.cjs test/unit/secret-access-policy.test.cjs test/unit/profile-policy.test.cjs",
+    "test:unit": "node --test test/unit/container.test.cjs test/unit/errors.test.cjs test/unit/secret-access-policy.test.cjs test/unit/profile-policy.test.cjs test/unit/property-like-policy.test.cjs",
     "test": "npm run build && npm run test:unit && npm run test:runtime",
-    "test:emulator": "node --test test/emulator/validate-user.test.cjs test/emulator/get-secret.test.cjs test/emulator/sync-user-profile.test.cjs",
+    "test:emulator": "node --test test/emulator/validate-user.test.cjs test/emulator/get-secret.test.cjs test/emulator/sync-user-profile.test.cjs test/emulator/set-property-like.test.cjs",
     "serve": "npm run build && firebase emulators:start --only functions,auth,firestore --project demo-estatia-ci",
     "shell": "npm run build && firebase functions:shell --project demo-estatia-ci",
     "start": "npm run shell",
@@ -16,7 +16,9 @@
     "logs": "firebase functions:log",
     "test:runtime": "node --test test/runtime/firebase-admin-database.test.cjs"
   },
-  "engines": {"node": "24"},
+  "engines": {
+    "node": "24"
+  },
   "main": "lib/index.js",
   "dependencies": {
     "@google-cloud/secret-manager": "^6.3.0",
@@ -35,5 +37,7 @@
     "typescript": "^5.1.6"
   },
   "private": true,
-  "overrides": {"@firebase/database-compat": "2.1.6"}
+  "overrides": {
+    "@firebase/database-compat": "2.1.6"
+  }
 }
