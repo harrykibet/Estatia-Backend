@@ -1,6 +1,8 @@
 name: Backend Security Analysis
 
 on:
+  pull_request:
+    branches: [master]
   push:
     branches: [master]
   schedule:
