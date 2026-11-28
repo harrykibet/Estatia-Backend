@@ -105,45 +105,56 @@ export const syncUserProfile = onCall(
         ...mutation.publicProfile,
       };
 
-      // Preserve an existing public choice when a sign-in bootstrap sends no
-      // display edit. On first migration, use legacy display fields only; never
-      // copy private or privileged fields from the mixed legacy user document.
-      const hasDisplayName = Object.prototype.hasOwnProperty.call(
-        requestProfile,
-        "displayName"
-      );
-      if (!hasDisplayName) {
-        const existingName = existingPublicProfile.displayName;
-        const legacyName = legacyUser.name;
-        if (typeof existingName === "string") {
-          publicProfileWrite.displayName = existingName;
-        } else if (typeof legacyName === "string") {
-          publicProfileWrite.displayName = legacyName;
+      // Preserve existing public choices during sign-in bootstrap. When no
+      // public profile exists, migrate only validated display fields from the
+      // old mixed user document; never copy private or privileged attributes.
+      const preserveOrMigrate = (
+        field: "displayName" | "profilePictureUrl" | "bio",
+        legacyField: "name" | "profilePictureUrl" | "bio",
+        maxLength: number
+      ) => {
+        if (Object.prototype.hasOwnProperty.call(requestProfile, field)) {
+          return;
         }
-      }
-      const hasProfilePicture = Object.prototype.hasOwnProperty.call(
-        requestProfile,
-        "profilePictureUrl"
-      );
-      if (!hasProfilePicture) {
-        const existingPicture = existingPublicProfile.profilePictureUrl;
-        const legacyPicture = legacyUser.profilePictureUrl;
-        if (typeof existingPicture === "string") {
-          publicProfileWrite.profilePictureUrl = existingPicture;
-        } else if (typeof legacyPicture === "string") {
-          publicProfileWrite.profilePictureUrl = legacyPicture;
-        }
-      }
 
-      if (!Object.prototype.hasOwnProperty.call(requestProfile, "bio")) {
-        const existingBio = existingPublicProfile.bio;
-        const legacyBio = legacyUser.bio;
-        if (typeof existingBio === "string") {
-          publicProfileWrite.bio = existingBio;
-        } else if (typeof legacyBio === "string") {
-          publicProfileWrite.bio = legacyBio;
+        const currentValue = existingPublicProfile[field];
+        if (typeof currentValue === "string") {
+          publicProfileWrite[field] = currentValue;
+          return;
         }
-      }
+
+        const legacyValue = legacyUser[legacyField];
+        if (typeof legacyValue !== "string") {
+          return;
+        }
+
+        const normalized = legacyValue.trim();
+        if (normalized.length === 0 || normalized.length > maxLength) {
+          return;
+        }
+
+        if (field === "profilePictureUrl") {
+          try {
+            const url = new URL(normalized);
+            if (
+              url.protocol !== "https:" ||
+              url.hostname.length === 0 ||
+              url.username.length > 0 ||
+              url.password.length > 0
+            ) {
+              return;
+            }
+          } catch {
+            return;
+          }
+        }
+
+        publicProfileWrite[field] = normalized;
+      };
+
+      preserveOrMigrate("displayName", "name", 80);
+      preserveOrMigrate("profilePictureUrl", "profilePictureUrl", 2048);
+      preserveOrMigrate("bio", "bio", 500);
 
       Object.assign(publicProfileWrite, {
         updatedAt: FieldValue.serverTimestamp(),
