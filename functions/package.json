@@ -7,13 +7,14 @@
     "build": "npm run clean && tsc",
     "build:watch": "tsc --watch",
     "test:unit": "node --test test/unit/container.test.cjs test/unit/errors.test.cjs",
-    "test": "npm run build && npm run test:unit",
+    "test": "npm run build && npm run test:unit && npm run test:runtime",
     "test:emulator": "node --test test/emulator/validate-user.test.cjs",
     "serve": "npm run build && firebase emulators:start --only functions --project demo-estatia-ci",
     "shell": "npm run build && firebase functions:shell --project demo-estatia-ci",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log"
+    "logs": "firebase functions:log",
+    "test:runtime": "node --test test/runtime/firebase-admin-database.test.cjs"
   },
   "engines": {
     "node": "24"
@@ -35,5 +36,8 @@
     "rimraf": "^6.1.3",
     "typescript": "^5.1.6"
   },
-  "private": true
+  "private": true,
+  "overrides": {
+    "@firebase/database-compat": "2.1.6"
+  }
 }

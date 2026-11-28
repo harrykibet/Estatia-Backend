@@ -8,6 +8,7 @@ const callableBaseUrl =
 test("validateUser callable responds through the Functions emulator", async () => {
   const response = await fetch(`${callableBaseUrl}/validateUser`, {
     method: "POST",
+    signal: AbortSignal.timeout(30_000),
     headers: {
       "Content-Type": "application/json",
     },
