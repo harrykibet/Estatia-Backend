@@ -1,28 +1,21 @@
 import {onCall} from "firebase-functions/v2/https";
-import {SecretService} from "./secretService";
-
-const secretService = new SecretService();
+import {denyClientSecretRead} from "./secretAccessPolicy";
 
 /**
- * Callable function that returns a secret value.
+ * Deprecated compatibility endpoint.
+ *
+ * Keep the callable name temporarily so an existing deployed function is
+ * updated in place instead of being deleted as part of this security change.
+ * It fails closed for every caller and never accesses Secret Manager.
+ *
+ * Remove this export only after the deployed-function inventory and all
+ * external client integrations have been reviewed.
  */
+const enforceAppCheck = process.env.FUNCTIONS_EMULATOR !== "true";
+
 export const getSecret = onCall(
   {
-    enforceAppCheck: true,
+    enforceAppCheck,
   },
-  async (request) => {
-    const secretId = request.data.secretId;
-
-    if (typeof secretId !== "string" || secretId.trim().length === 0) {
-      throw new Error("Missing secretId");
-    }
-
-    try {
-      const secret = await secretService.getSecret(secretId);
-      return {value: secret};
-    } catch (error) {
-      console.error("Secret retrieval failed", error);
-      throw new Error("Unable to retrieve secret");
-    }
-  }
+  async (request) => denyClientSecretRead(request.auth?.uid)
 );

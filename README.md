@@ -53,7 +53,7 @@ npm --prefix functions run typecheck
 npm --prefix functions test
 ```
 
-The test command builds the TypeScript sources and then runs the Node.js built-in unit-test runner.
+The test command builds the TypeScript sources and runs the Node.js built-in unit-test runner, including the server-only secret-access policy test.
 
 ## Functions emulator
 
@@ -75,6 +75,8 @@ See [local emulator operations](docs/operations/local-functions-emulator.md).
 
 Never commit service-account files, API credentials, payment-provider secrets, debug tokens, production exports, or personal data. Private credentials belong in a server-side secret store and must be accessed only by authorized server code.
 
+The legacy `getSecret` callable is retained temporarily to avoid deleting a potentially deployed function during this security change, but now fails closed for all callers and never accesses Secret Manager. App Check remains enforced in deployed environments. See [the client/server secret boundary](docs/security/client-secret-boundary.md).
+
 App Check is an additional abuse-control layer. It does not replace Firebase Authentication, resource-level authorization, input validation, or server-side business rules.
 
 ## Deployment
@@ -89,9 +91,9 @@ Pull requests and pushes to `master` run the Backend PR Verification workflow:
 
 - ESLint.
 - TypeScript type checking.
-- Unit tests.
+- Unit and runtime regression tests.
 - TypeScript build.
-- Functions Emulator callable smoke test.
+- Functions Emulator callable smoke tests, including the fail-closed secret endpoint.
 
 The nightly workflow repeats the full verification and retains build/emulator evidence. The security workflow runs CodeQL and a runtime dependency audit.
 
