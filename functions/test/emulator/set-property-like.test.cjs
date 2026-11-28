@@ -199,3 +199,118 @@ test("setPropertyLike is authenticated, idempotent and maintains paired state an
     }
   }
 });
+
+
+test("migrateLegacyPropertyLikes moves old favourites to canonical indexes", async () => {
+  const user = await createSyntheticUser();
+  const adminApp = initializeApp(
+    {projectId},
+    `legacy-likes-contract-${randomUUID()}`
+  );
+  const database = getFirestore(adminApp);
+  const userRef = database.collection("users").doc(user.localId);
+  const validPropertyId = `legacy-property-${randomUUID()}`;
+  const missingPropertyId = `missing-property-${randomUUID()}`;
+  const propertyRef = database.collection("properties").doc(validPropertyId);
+  const propertyLikeRef = propertyRef.collection("likes").doc(user.localId);
+  const userLikeRef = userRef
+    .collection("likedproperties")
+    .doc(validPropertyId);
+
+  try {
+    await Promise.all([
+      userRef.set({
+        uid: user.localId,
+        userType: "TENANT",
+        likedProperties: [
+          validPropertyId,
+          validPropertyId,
+          missingPropertyId,
+          "invalid/property/id",
+        ],
+      }),
+      propertyRef.set({
+        title: "Legacy favorite property",
+        likesCount: 4,
+      }),
+    ]);
+
+    const unauthenticated = await fetch(
+      `${callableBaseUrl}/migrateLegacyPropertyLikes`,
+      {
+        method: "POST",
+        signal: AbortSignal.timeout(30_000),
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({data: {}}),
+      }
+    );
+    assert.equal(unauthenticated.status, 401);
+
+    const response = await fetch(
+      `${callableBaseUrl}/migrateLegacyPropertyLikes`,
+      {
+        method: "POST",
+        signal: AbortSignal.timeout(30_000),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.idToken}`,
+        },
+        body: JSON.stringify({data: {}}),
+      }
+    );
+    const body = await response.json();
+    assert.equal(
+      response.status,
+      200,
+      `Legacy likes migration failed: ${JSON.stringify(body)}`
+    );
+    assert.deepEqual(body.result, {
+      migrated: 1,
+      processed: 4,
+      remaining: 0,
+    });
+
+    const [property, propertyLike, userLike, userSnapshot] =
+      await Promise.all([
+        propertyRef.get(),
+        propertyLikeRef.get(),
+        userLikeRef.get(),
+        userRef.get(),
+      ]);
+    assert.equal(property.data().likesCount, 5);
+    assert.equal(propertyLike.exists, true);
+    assert.equal(userLike.exists, true);
+    assert.deepEqual(userSnapshot.data().likedProperties, []);
+
+    const repeat = await fetch(
+      `${callableBaseUrl}/migrateLegacyPropertyLikes`,
+      {
+        method: "POST",
+        signal: AbortSignal.timeout(30_000),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.idToken}`,
+        },
+        body: JSON.stringify({data: {}}),
+      }
+    );
+    assert.deepEqual((await repeat.json()).result, {
+      migrated: 0,
+      processed: 0,
+      remaining: 0,
+    });
+    assert.equal((await propertyRef.get()).data().likesCount, 5);
+  } finally {
+    await Promise.all([
+      userRef.delete(),
+      propertyRef.delete(),
+      propertyLikeRef.delete(),
+      userLikeRef.delete(),
+    ]);
+    try {
+      await deleteSyntheticUser(user.idToken);
+    } finally {
+      await deleteApp(adminApp);
+    }
+  }
+});
