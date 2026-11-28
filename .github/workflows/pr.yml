@@ -2,7 +2,7 @@ name: Backend PR Verification
 
 on:
   pull_request:
-    branches: [master]
+    branches: [master, chore/backend-foundation-governance]
     types: [opened, synchronize, reopened, ready_for_review]
   merge_group:
     branches: [master]
