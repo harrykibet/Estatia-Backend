@@ -108,7 +108,8 @@ export const syncUserProfile = onCall(
       // Preserve an existing public choice when a sign-in bootstrap sends no
       // display edit. On first migration, use legacy display fields only; never
       // copy private or privileged fields from the mixed legacy user document.
-      if (!Object.prototype.hasOwnProperty.call(requestProfile, "displayName")) {
+      const hasDisplayName = Object.prototype.hasOwnProperty.call(
+      if (!hasDisplayName) {
         const existingName = existingPublicProfile.displayName;
         const legacyName = legacyUser.name;
         if (typeof existingName === "string") {
@@ -117,7 +118,8 @@ export const syncUserProfile = onCall(
           publicProfileWrite.displayName = legacyName;
         }
       }
-
+      const hasProfilePicture = Object.prototype.hasOwnProperty.call(
+      if (!hasProfilePicture) {
       if (!Object.prototype.hasOwnProperty.call(requestProfile, "profilePictureUrl")) {
         const existingPicture = existingPublicProfile.profilePictureUrl;
         const legacyPicture = legacyUser.profilePictureUrl;
