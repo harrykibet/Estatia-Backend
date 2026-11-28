@@ -11,7 +11,6 @@ const enforceAppCheck = process.env.FUNCTIONS_EMULATOR !== "true";
 /**
  * Converts an untrusted interaction payload into a typed callable error.
  * @param {unknown} error Error thrown while validating interaction input.
- * @return {never} Throws the callable validation error.
  */
 function throwInteractionValidation(error: unknown): never {
   if (error instanceof PropertyInteractionValidationError) {

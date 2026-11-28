@@ -37,7 +37,7 @@ const PROPERTY_ID_PATTERN = /^[^/\s]{1,128}$/;
 /**
  * Checks whether a property document ID is valid.
  * @param {unknown} value Untrusted property ID.
- * @return {value is string} True when the ID is a valid path segment.
+ * @return {boolean} True when the ID is a valid path segment.
  */
 function isValidPropertyId(value: unknown): value is string {
   return typeof value === "string" && PROPERTY_ID_PATTERN.test(value);
