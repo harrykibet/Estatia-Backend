@@ -156,6 +156,25 @@ export const syncUserProfile = onCall(
       preserveOrMigrate("profilePictureUrl", "profilePictureUrl", 2048);
       preserveOrMigrate("bio", "bio", 500);
 
+      // This is a user-declared display category, not an authorization role.
+      // Only the three documented public values may be migrated from legacy
+      // data; values such as ADMIN are never published or used for access.
+      if (!Object.prototype.hasOwnProperty.call(requestProfile, "profileType")) {
+        const existingType = existingPublicProfile.profileType;
+        const legacyType = legacyUser.userType;
+        if (
+          typeof existingType === "string" &&
+          ["TENANT", "AGENT", "PROPERTY_OWNER"].includes(existingType)
+        ) {
+          publicProfileWrite.profileType = existingType;
+        } else if (
+          typeof legacyType === "string" &&
+          ["TENANT", "AGENT", "PROPERTY_OWNER"].includes(legacyType)
+        ) {
+          publicProfileWrite.profileType = legacyType;
+        }
+      }
+
       Object.assign(publicProfileWrite, {
         updatedAt: FieldValue.serverTimestamp(),
         ...(!publicProfileSnapshot.exists ? {

@@ -36,6 +36,27 @@ describe("user profile data boundary", () => {
     });
   });
 
+
+  it("allows only the display-only public profile categories", () => {
+    const mutation = buildProfileMutation(
+      "synthetic-user",
+      {profileType: "PROPERTY_OWNER"},
+      {}
+    );
+    assert.equal(mutation.publicProfile.profileType, "PROPERTY_OWNER");
+
+    for (const profileType of ["ADMIN", "SUPERUSER", "OWNER", 7, null]) {
+      assert.throws(
+        () => buildProfileMutation(
+          "synthetic-user",
+          {profileType},
+          {}
+        ),
+        ProfileValidationError
+      );
+    }
+  });
+
   it("rejects client-supplied identity, role, verification and counter fields", () => {
     for (const field of [
       "uid",

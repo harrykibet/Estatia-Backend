@@ -72,6 +72,7 @@ test("syncUserProfile authenticates and separates public/private profile documen
       {
         displayName: "Synthetic Profile",
         bio: "A profile created by the emulator contract test.",
+        profileType: "AGENT",
       },
       signUpBody.idToken
     );
@@ -112,6 +113,7 @@ test("syncUserProfile authenticates and separates public/private profile documen
       publicProfile.bio,
       "A profile created by the emulator contract test."
     );
+    assert.equal(publicProfile.profileType, "AGENT");
     assert.equal("email" in publicProfile, false);
     assert.equal("phoneNumber" in publicProfile, false);
     assert.equal("verificationLevel" in publicProfile, false);
@@ -227,6 +229,7 @@ test("syncUserProfile migrates only legacy display fields to publicProfiles", as
       "https://cdn.example.test/legacy-avatar.png"
     );
     assert.equal(publicProfile.bio, "Legacy public biography");
+    assert.equal(publicProfile.profileType, "PROPERTY_OWNER");
     assert.equal("email" in publicProfile, false);
     assert.equal("phoneNumber" in publicProfile, false);
     assert.equal("userType" in publicProfile, false);

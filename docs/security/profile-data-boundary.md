@@ -4,7 +4,7 @@
 
 The first profile-security implementation introduces two documents keyed by the authenticated Firebase UID:
 
-- `publicProfiles/{uid}`: only display-safe attributes (`uid`, `displayName`, `profilePictureUrl`, `bio`, `createdAt`, `updatedAt`). This is the candidate source for public profile rendering.
+- `publicProfiles/{uid}`: display-safe attributes (`uid`, `displayName`, `profilePictureUrl`, `bio`, `profileType`, `createdAt`, `updatedAt`). This is the source for public profile rendering. `profileType` is a self-declared display category (TENANT, AGENT, or PROPERTY_OWNER), not an authorization claim.
 - `users/{uid}`: private account attributes (including Auth-derived `email`, `phoneNumber`, and `emailVerified`) and server-maintained account state. This document is not a public profile document.
 
 Firestore rules authorize an entire document read; they do not redact individual fields. Keeping both categories in one document cannot provide field-level privacy.
@@ -15,14 +15,14 @@ The callable `syncUserProfile` is the only new write path in this slice. It:
 
 1. Requires Firebase Authentication and uses `request.auth.uid`; it does not accept a client-selected UID.
 2. Enforces App Check in deployed environments. Only the Functions Emulator bypasses the attestation gate for local testing.
-3. Accepts only `displayName`, `profilePictureUrl`, and `bio` from the client.
+3. Accepts only `displayName`, `profilePictureUrl`, `bio`, and a validated display-only `profileType` from the client. The category is never used for authorization or verification.
 4. Validates display name length (1–80), bio length (0–500), and HTTPS-only profile picture URLs (max 2048).
 5. Sources email, phone number and email-verification state from Firebase Auth token claims, not request fields.
 6. Creates default `TENANT` / `NONE` state and zeroed counters for a new private user document. Existing role/verification values are preserved by this callable, not trusted for authorization, and require a separate legacy-data audit/reconciliation before the rules migration.
 7. Writes the private and public documents atomically in one Firestore transaction.
 8. Returns only the public profile patch; private account data is never included in the callable response.
 
-The function rejects unknown fields rather than silently ignoring them. In particular, callers cannot submit `uid`, email, phone number, `userType`, `verificationLevel`, role claims, or account counters.
+The function rejects unknown fields rather than silently ignoring them. In particular, callers cannot submit `uid`, email, phone number, `userType`, `verificationLevel`, role claims, or account counters. The separate `profileType` display category accepts only TENANT, AGENT, and PROPERTY_OWNER and must never grant permissions. Legacy values outside that set (including ADMIN) are not migrated to public profiles.
 
 ## Migration limitations
 

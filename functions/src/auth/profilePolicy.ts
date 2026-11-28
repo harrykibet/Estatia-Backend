@@ -9,6 +9,8 @@ export interface PublicProfileInput {
   displayName?: string;
   profilePictureUrl?: string | null;
   bio?: string | null;
+  /** Display-only, user-declared category; never an authorization claim. */
+  profileType?: "TENANT" | "AGENT" | "PROPERTY_OWNER";
 }
 
 /**
@@ -48,6 +50,13 @@ const ALLOWED_PROFILE_FIELDS = new Set([
   "displayName",
   "profilePictureUrl",
   "bio",
+  "profileType",
+]);
+
+const PUBLIC_PROFILE_TYPES = new Set([
+  "TENANT",
+  "AGENT",
+  "PROPERTY_OWNER",
 ]);
 
 /**
@@ -114,6 +123,10 @@ export function buildProfileMutation(
     publicProfile.bio = normalizeBio(input.bio);
   }
 
+  if (Object.prototype.hasOwnProperty.call(input, "profileType")) {
+    publicProfile.profileType = normalizeProfileType(input.profileType);
+  }
+
   const privateProfile: Record<string, string | boolean> = {uid};
   const email = safeClaimString(claims.email, 320);
   const phoneNumber = safeClaimString(claims.phone_number, 32);
@@ -129,6 +142,29 @@ export function buildProfileMutation(
   }
 
   return {publicProfile, privateProfile};
+}
+
+/**
+ * Validates a public, self-declared profile category.
+ *
+ * This field is presentation-only and must never be used to grant access.
+ *
+ * @param {unknown} value Untrusted profile category.
+ * @return {"TENANT" | "AGENT" | "PROPERTY_OWNER"} Allowed profile category.
+ */
+function normalizeProfileType(
+  value: unknown
+): "TENANT" | "AGENT" | "PROPERTY_OWNER" {
+  if (
+    typeof value !== "string" ||
+    !PUBLIC_PROFILE_TYPES.has(value)
+  ) {
+    throw new ProfileValidationError(
+      "profileType must be TENANT, AGENT, or PROPERTY_OWNER."
+    );
+  }
+
+  return value as "TENANT" | "AGENT" | "PROPERTY_OWNER";
 }
 
 /**
