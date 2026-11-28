@@ -292,3 +292,5 @@ export const setPropertyLike = onCall(
     });
   }
 );
+
+export * from "./interactionFunctions";
