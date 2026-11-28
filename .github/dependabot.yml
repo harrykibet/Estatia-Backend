@@ -10,11 +10,17 @@ updates:
     open-pull-requests-limit: 10
     groups:
       firebase-runtime:
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
         patterns:
           - "firebase-*"
           - "@firebase/*"
           - "@google-cloud/*"
       typescript-tooling:
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
         patterns:
           - "typescript"
           - "@typescript-eslint/*"
