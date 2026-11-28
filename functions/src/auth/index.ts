@@ -41,9 +41,11 @@ export const validateUser = onCall(
  * Synchronizes a user's public profile and private account attributes.
  *
  * The callable derives the UID from Firebase Authentication. Client payloads
- * may contain only displayName, profilePictureUrl, and bio. Email, phone and
- * email verification are taken from authenticated token claims. Role,
- * verification level, counters and other privileged fields are server-owned.
+ * may contain displayName, profilePictureUrl, bio, and a bounded public
+ * profileCategory used only for presentation. The category is not an account
+ * role and never grants privileges. Email, phone and email verification are
+ * taken from authenticated token claims. Private role, verification level,
+ * counters and other privileged fields remain server-owned.
  */
 export const syncUserProfile = onCall(
   {
@@ -156,26 +158,31 @@ export const syncUserProfile = onCall(
       preserveOrMigrate("profilePictureUrl", "profilePictureUrl", 2048);
       preserveOrMigrate("bio", "bio", 500);
 
-      // This is a user-declared display category, not an authorization role.
-      // Only the three documented public values may be migrated from legacy
-      // data; values such as ADMIN are never published or used for access.
-      const hasProfileType = Object.prototype.hasOwnProperty.call(
+      // Keep the public display category separate from the private,
+      // server-controlled users/{uid}.userType role. Migrate legacy
+      // profileType/userType values only into the non-authoritative display
+      // category; never use this field for authorization.
+      const hasProfileCategory = Object.prototype.hasOwnProperty.call(
         requestProfile,
-        "profileType"
+        "profileCategory"
       );
-      if (!hasProfileType) {
-        const existingType = existingPublicProfile.profileType;
-        const legacyType = legacyUser.userType;
+      if (!hasProfileCategory) {
+        const existingCategory = existingPublicProfile.profileCategory;
+        const legacyCategory = existingPublicProfile.profileType;
+        const allowedCategories = ["TENANT", "AGENT", "PROPERTY_OWNER"];
         if (
-          typeof existingType === "string" &&
-          ["TENANT", "AGENT", "PROPERTY_OWNER"].includes(existingType)
+          typeof existingCategory === "string" &&
+          allowedCategories.includes(existingCategory)
         ) {
-          publicProfileWrite.profileType = existingType;
+          publicProfileWrite.profileCategory = existingCategory;
         } else if (
-          typeof legacyType === "string" &&
-          ["TENANT", "AGENT", "PROPERTY_OWNER"].includes(legacyType)
+          typeof legacyCategory === "string" &&
+          allowedCategories.includes(legacyCategory)
         ) {
-          publicProfileWrite.profileType = legacyType;
+          // profileType was a public, self-declared display field. The private
+          // users/{uid}.userType value is not migrated because it may have
+          // originated from an untrusted legacy client write.
+          publicProfileWrite.profileCategory = legacyCategory;
         }
       }
 
@@ -187,7 +194,10 @@ export const syncUserProfile = onCall(
       });
 
       transaction.set(privateUserRef, privateUserWrite, {merge: true});
-      transaction.set(publicProfileRef, publicProfileWrite, {merge: true});
+      // Replace the public document with its allowlisted shape. This also
+      // removes legacy private/privileged fields that may already have leaked
+      // into a publicProfiles document.
+      transaction.set(publicProfileRef, publicProfileWrite);
     });
 
     // Never return the private profile document to a client.

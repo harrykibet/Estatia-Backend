@@ -9,7 +9,9 @@ export interface PublicProfileInput {
   displayName?: string;
   profilePictureUrl?: string | null;
   bio?: string | null;
-  /** Display-only, user-declared category; never an authorization claim. */
+  /** Public display category only; never an authorization claim. */
+  profileCategory?: "TENANT" | "AGENT" | "PROPERTY_OWNER";
+  /** @deprecated Transitional alias for older mobile clients. */
   profileType?: "TENANT" | "AGENT" | "PROPERTY_OWNER";
 }
 
@@ -50,10 +52,11 @@ const ALLOWED_PROFILE_FIELDS = new Set([
   "displayName",
   "profilePictureUrl",
   "bio",
+  "profileCategory",
   "profileType",
 ]);
 
-const PUBLIC_PROFILE_TYPES = new Set([
+const PUBLIC_PROFILE_CATEGORIES = new Set([
   "TENANT",
   "AGENT",
   "PROPERTY_OWNER",
@@ -123,8 +126,25 @@ export function buildProfileMutation(
     publicProfile.bio = normalizeBio(input.bio);
   }
 
-  if (Object.prototype.hasOwnProperty.call(input, "profileType")) {
-    publicProfile.profileType = normalizeProfileType(input.profileType);
+  const hasProfileCategory = Object.prototype.hasOwnProperty.call(
+    input,
+    "profileCategory"
+  );
+  const hasLegacyProfileType = Object.prototype.hasOwnProperty.call(
+    input,
+    "profileType"
+  );
+  if (hasProfileCategory && hasLegacyProfileType) {
+    throw new ProfileValidationError(
+      "Specify profileCategory only; profileType is a legacy alias."
+    );
+  }
+  if (hasProfileCategory) {
+    publicProfile.profileCategory = normalizeProfileCategory(input.profileCategory);
+  } else if (hasLegacyProfileType) {
+    // Keep existing app versions working during rollout. The alias is mapped
+    // to the same presentation-only field and is never used for authorization.
+    publicProfile.profileCategory = normalizeProfileCategory(input.profileType);
   }
 
   const privateProfile: Record<string, string | boolean> = {uid};
@@ -145,22 +165,22 @@ export function buildProfileMutation(
 }
 
 /**
- * Validates a public, self-declared profile category.
+ * Validates a public, self-declared display category.
  *
- * This field is presentation-only and must never be used to grant access.
+ * It is presentation-only and must never be used to authorize privileged actions.
  *
- * @param {unknown} value Untrusted profile category.
- * @return {"TENANT" | "AGENT" | "PROPERTY_OWNER"} Allowed profile category.
+ * @param {unknown} value Untrusted public profile category.
+ * @return {"TENANT" | "AGENT" | "PROPERTY_OWNER"} Allowed display category.
  */
-function normalizeProfileType(
+function normalizeProfileCategory(
   value: unknown
 ): "TENANT" | "AGENT" | "PROPERTY_OWNER" {
   if (
     typeof value !== "string" ||
-    !PUBLIC_PROFILE_TYPES.has(value)
+    !PUBLIC_PROFILE_CATEGORIES.has(value)
   ) {
     throw new ProfileValidationError(
-      "profileType must be TENANT, AGENT, or PROPERTY_OWNER."
+      "profileCategory must be TENANT, AGENT, or PROPERTY_OWNER."
     );
   }
 

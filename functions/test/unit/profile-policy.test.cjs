@@ -40,21 +40,40 @@ describe("user profile data boundary", () => {
   it("allows only the display-only public profile categories", () => {
     const mutation = buildProfileMutation(
       "synthetic-user",
-      {profileType: "PROPERTY_OWNER"},
+      {profileCategory: "PROPERTY_OWNER"},
       {}
     );
-    assert.equal(mutation.publicProfile.profileType, "PROPERTY_OWNER");
+    assert.equal(mutation.publicProfile.profileCategory, "PROPERTY_OWNER");
 
-    for (const profileType of ["ADMIN", "SUPERUSER", "OWNER", 7, null]) {
+    for (const profileCategory of ["ADMIN", "SUPERUSER", "OWNER", 7, null]) {
       assert.throws(
         () => buildProfileMutation(
           "synthetic-user",
-          {profileType},
+          {profileCategory},
           {}
         ),
         ProfileValidationError
       );
     }
+  });
+
+  it("maps the legacy profileType input to the display-only profileCategory", () => {
+    const mutation = buildProfileMutation(
+      "synthetic-user",
+      {profileType: "AGENT"},
+      {}
+    );
+    assert.equal(mutation.publicProfile.profileCategory, "AGENT");
+    assert.equal("profileType" in mutation.publicProfile, false);
+
+    assert.throws(
+      () => buildProfileMutation(
+        "synthetic-user",
+        {profileCategory: "TENANT", profileType: "AGENT"},
+        {}
+      ),
+      ProfileValidationError
+    );
   });
 
   it("rejects client-supplied identity, role, verification and counter fields", () => {

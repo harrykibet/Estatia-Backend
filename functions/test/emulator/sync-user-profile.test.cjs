@@ -72,7 +72,7 @@ test("syncUserProfile authenticates and separates public/private profile documen
       {
         displayName: "Synthetic Profile",
         bio: "A profile created by the emulator contract test.",
-        profileType: "AGENT",
+        profileCategory: "AGENT",
       },
       signUpBody.idToken
     );
@@ -113,7 +113,22 @@ test("syncUserProfile authenticates and separates public/private profile documen
       publicProfile.bio,
       "A profile created by the emulator contract test."
     );
-    assert.equal(publicProfile.profileType, "AGENT");
+    assert.equal(publicProfile.profileCategory, "AGENT");
+    assert.equal("profileType" in publicProfile, false);
+
+    // Older mobile clients still send profileType during the staged rollout.
+    const legacyClient = await callSyncUserProfile(
+      {profileType: "PROPERTY_OWNER"},
+      signUpBody.idToken
+    );
+    assert.equal(
+      legacyClient.response.status,
+      200,
+      `Legacy profile category sync failed: ${JSON.stringify(legacyClient.body)}`
+    );
+    const migratedPublicProfile = (await publicProfileRef.get()).data();
+    assert.equal(migratedPublicProfile.profileCategory, "PROPERTY_OWNER");
+    assert.equal("profileType" in migratedPublicProfile, false);
     assert.equal("email" in publicProfile, false);
     assert.equal("phoneNumber" in publicProfile, false);
     assert.equal("verificationLevel" in publicProfile, false);
@@ -208,6 +223,16 @@ test("syncUserProfile migrates only legacy display fields to publicProfiles", as
       verificationLevel: "NONE",
       followerCount: 12,
     });
+    await publicProfileRef.set({
+      uid: signUpBody.localId,
+      profileType: "PROPERTY_OWNER",
+      email: "stale-public-email@example.test",
+      phoneNumber: "+254700000099",
+      userType: "ADMIN",
+      verificationLevel: "TRUSTED_PARTNER",
+      followerCount: 999,
+      stalePrivateField: "must be removed",
+    });
 
     const migrated = await callSyncUserProfile({}, signUpBody.idToken);
     assert.equal(
@@ -229,13 +254,14 @@ test("syncUserProfile migrates only legacy display fields to publicProfiles", as
       "https://cdn.example.test/legacy-avatar.png"
     );
     assert.equal(publicProfile.bio, "Legacy public biography");
-    assert.equal(publicProfile.profileType, "PROPERTY_OWNER");
+    assert.equal(publicProfile.profileCategory, "PROPERTY_OWNER");
+    assert.equal("profileType" in publicProfile, false);
     assert.equal("email" in publicProfile, false);
     assert.equal("phoneNumber" in publicProfile, false);
     assert.equal("userType" in publicProfile, false);
     assert.equal("verificationLevel" in publicProfile, false);
     assert.equal("followerCount" in publicProfile, false);
-
+    assert.equal("stalePrivateField" in publicProfile, false);
     assert.equal(privateProfile.email, email);
     assert.equal(privateProfile.phoneNumber, "+254700000001");
     assert.equal(privateProfile.userType, "PROPERTY_OWNER");
