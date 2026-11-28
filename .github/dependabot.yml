@@ -1,0 +1,31 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /functions
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Africa/Nairobi
+    open-pull-requests-limit: 10
+    groups:
+      firebase-runtime:
+        patterns:
+          - "firebase-*"
+          - "@firebase/*"
+          - "@google-cloud/*"
+      typescript-tooling:
+        patterns:
+          - "typescript"
+          - "@typescript-eslint/*"
+          - "eslint*"
+          - "eslint-*"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:30"
+      timezone: Africa/Nairobi
+    open-pull-requests-limit: 10

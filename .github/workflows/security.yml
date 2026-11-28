@@ -1,0 +1,77 @@
+name: Backend Security Analysis
+
+on:
+  push:
+    branches: [master]
+  schedule:
+    - cron: "41 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+concurrency:
+  group: backend-security-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  codeql:
+    name: CodeQL analysis
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@bf58c2ac1f8060aa73f1225f461c80391348076a # v4
+
+        with:
+          languages: javascript-typescript
+
+      - name: Analyze with CodeQL
+        uses: github/codeql-action/analyze@bf58c2ac1f8060aa73f1225f461c80391348076a # v4
+        with:
+          category: "/language:javascript-typescript"
+
+  runtime-dependency-audit:
+    name: Runtime dependency vulnerability audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+          package-manager-cache: false
+
+      - name: Install locked dependencies
+        run: npm ci --prefix functions
+
+      - name: Audit production dependencies
+        shell: bash
+        run: |
+          set +e
+          npm audit --prefix functions --omit=dev --audit-level=high --json > "${RUNNER_TEMP}/npm-audit.json"
+          audit_status=$?
+          set -e
+          if [[ "$audit_status" -ne 0 ]]; then
+            echo "::error::High or critical vulnerabilities were found in runtime dependencies."
+            exit "$audit_status"
+          fi
+
+      - name: Retain dependency audit report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: backend-runtime-dependency-audit-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/npm-audit.json
+          if-no-files-found: warn
+          retention-days: 30
