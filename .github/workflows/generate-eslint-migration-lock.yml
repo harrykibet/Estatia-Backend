@@ -28,6 +28,9 @@ jobs:
           npm install --global npm@11.21.3
           npm --version
 
+      - name: Discard obsolete lockfile before regeneration
+        run: rm -f functions/package-lock.json
+
       - name: Regenerate lockfile from manifest
         run: npm install --prefix functions --package-lock-only --ignore-scripts --no-audit --no-fund
 
