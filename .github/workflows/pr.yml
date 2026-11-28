@@ -2,7 +2,7 @@ name: Backend PR Verification
 
 on:
   pull_request:
-    branches: [master, chore/backend-foundation-governance]
+    branches: [master]
     types: [opened, synchronize, reopened, ready_for_review]
   merge_group:
     branches: [master]
@@ -27,6 +27,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: Set up Java 21 for Firebase Emulator Suite
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: "21"
+
       - name: Set up Node.js 24
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -47,13 +53,13 @@ jobs:
       - name: Build and run unit tests
         run: npm --prefix functions test
 
-      - name: Run Functions Emulator integration test
+      - name: Run Functions, Auth, and Firestore Emulator integration tests
         shell: bash
         run: |
           set -euo pipefail
           npx --yes firebase-tools@15.37.0 emulators:exec \
             --project demo-estatia-ci \
-            --only functions \
+            --only functions,auth,firestore \
             --non-interactive \
             "npm --prefix functions run test:emulator"
 
