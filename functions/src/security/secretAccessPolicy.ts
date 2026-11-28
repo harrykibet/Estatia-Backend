@@ -7,7 +7,6 @@ import {HttpsError} from "firebase-functions/v2/https";
  * deliberately no client-readable Secret Manager allowlist in this policy.
  *
  * @param {string | undefined} uid Authenticated Firebase user ID, if present.
- * @return {never} Always throws a callable error.
  */
 export function denyClientSecretRead(uid: string | undefined): never {
   if (!uid) {
